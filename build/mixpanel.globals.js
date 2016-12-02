@@ -2165,6 +2165,7 @@
         'disable_cookie':         false,
         'secure_cookie':          false,
         'ip':                     true,
+        'client_ip':              '', // 用于存储用户的ip地址
         'property_blacklist':     []
     };
     DEFAULT_CONFIG['decide_host'] = DEFAULT_CONFIG['api_host'];
@@ -2963,6 +2964,10 @@
         }
 
         data['ip'] = this.get_config('ip')?1:0;
+        var client_ip = this.get_config('client_ip')
+        if (data['ip'] && client_ip) {
+            data['ip'] = client_ip
+        }
         data['_'] = new Date().getTime().toString();
         url += '?' + _.HTTPBuildQuery(data);
 
@@ -3601,6 +3606,11 @@
         return name;
     };
 
+    MixpanelLib.prototype.set_client_ip = function (ip, days) {
+        this.set_config({ client_ip: ip });
+        this.register({ ip: ip }, days);
+    }
+
     MixpanelLib.prototype._event_is_disabled = function(event_name) {
         return _.isBlockedUA(userAgent) ||
             this._flags.disable_all_events ||
@@ -3938,7 +3948,10 @@
     MixpanelPeople.prototype._send_request = function(data, callback) {
         data['$token'] = this._get_config('token');
         data['$distinct_id'] = this._mixpanel.get_distinct_id();
-
+        var ip = this._get_config('client_ip')
+        if (ip) {
+            data['$ip'] =ip
+        }
         var date_encoded_data = _.encodeDates(data);
         var truncated_data    = _.truncate(date_encoded_data, 255);
         var json_data         = _.JSONEncode(date_encoded_data);

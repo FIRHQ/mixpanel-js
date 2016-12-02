@@ -1,3 +1,13 @@
+Fork from [mixpanel](https://github.com/mixpanel/mixpanel-js)
+# 修改
+## 添加 mixpanel.set_client_ip 方法
+如果设置 config.ip = false 则该方法则失效，详细见[Special properties in events](https://mixpanel.com/help/reference/http#tracking-events)中的 ip 参数
+注：使用 mixpanel.register({ ip: ip }) 存储设置的ip地址
+
+ip 将用于设置用户的国家及地区: `mixpanel.set_client_ip(ip)`
+清除 ip 设置: `mixpanel.set_client_ip(null)`
+你可以使用下面的方法获取上一次设置的ip: `mixpanel.get_property('ip')`
+
 # Mixpanel JavaScript Library
 The Mixpanel JavaScript Library is a set of methods attached to a global `mixpanel` object
 intended to be used by websites wishing to send data to Mixpanel projects. A full reference

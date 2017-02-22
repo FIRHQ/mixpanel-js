@@ -1340,7 +1340,7 @@ MixpanelLib.prototype.identify = function(unique_id, _set_callback, _add_callbac
 
     // identify only changes the distinct id if it doesn't match either the existing or the alias;
     // if it's new, blow away the alias as well.
-    if (unique_id !== this.get_distinct_id() && unique_id !== this.get_property(ALIAS_ID_KEY)) {
+    if (unique_id !== this.get_distinct_id()) {
         this.unregister(ALIAS_ID_KEY);
         this._register_single('distinct_id', unique_id);
     }

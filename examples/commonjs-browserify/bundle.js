@@ -2964,9 +2964,9 @@ MixpanelLib.prototype._send_request = function(url, data, callback) {
     }
 
     data['ip'] = this.get_config('ip')?1:0;
-    var client_ip = this.get_config('client_ip')
+    var client_ip = this.get_config('client_ip');
     if (data['ip'] && client_ip) {
-        data['ip'] = client_ip
+        data['ip'] = client_ip;
     }
     data['_'] = new Date().getTime().toString();
     url += '?' + _.HTTPBuildQuery(data);
@@ -3398,7 +3398,7 @@ MixpanelLib.prototype.identify = function(unique_id, _set_callback, _add_callbac
 
     // identify only changes the distinct id if it doesn't match either the existing or the alias;
     // if it's new, blow away the alias as well.
-    if (unique_id !== this.get_distinct_id() && unique_id !== this.get_property(ALIAS_ID_KEY)) {
+    if (unique_id !== this.get_distinct_id()) {
         this.unregister(ALIAS_ID_KEY);
         this._register_single('distinct_id', unique_id);
     }
@@ -3459,7 +3459,7 @@ MixpanelLib.prototype.get_distinct_id = function() {
  * @param {String} alias A unique identifier that you want to use for this user in the future.
  * @param {String} [original] The current identifier being used for this user.
  */
-MixpanelLib.prototype.alias = function(alias, original) {
+MixpanelLib.prototype.alias = function(alias, original, callback) {
     // If the $people_distinct_id key exists in persistence, there has been a previous
     // mixpanel.people.identify() call made for this user. It is VERY BAD to make an alias with
     // this ID, as it will duplicate users.
@@ -3477,6 +3477,7 @@ MixpanelLib.prototype.alias = function(alias, original) {
         return this.track('$create_alias', { 'alias': alias, 'distinct_id': original }, function() {
             // Flush the people queue
             _this.identify(alias);
+            callback && callback();
         });
     } else {
         console$1.error('alias matches current distinct_id - skipping api call.');
@@ -3609,7 +3610,7 @@ MixpanelLib.prototype.toString = function() {
 MixpanelLib.prototype.set_client_ip = function (ip, days) {
     this.set_config({ client_ip: ip });
     this.register({ ip: ip }, days);
-}
+};
 
 MixpanelLib.prototype._event_is_disabled = function(event_name) {
     return _.isBlockedUA(userAgent) ||
@@ -3948,9 +3949,9 @@ MixpanelPeople.prototype.toString = function() {
 MixpanelPeople.prototype._send_request = function(data, callback) {
     data['$token'] = this._get_config('token');
     data['$distinct_id'] = this._mixpanel.get_distinct_id();
-    var ip = this._get_config('client_ip')
+    var ip = this._get_config('client_ip');
     if (ip) {
-        data['$ip'] =ip
+        data['$ip'] = ip;
     }
     var date_encoded_data = _.encodeDates(data);
     var truncated_data    = _.truncate(date_encoded_data, 255);

@@ -1931,7 +1931,7 @@ MixpanelLib.prototype.identify = function (unique_id, _set_callback, _add_callba
 
     // identify only changes the distinct id if it doesn't match either the existing or the alias;
     // if it's new, blow away the alias as well.
-    if (unique_id !== this.get_distinct_id() && unique_id !== this.get_property(ALIAS_ID_KEY)) {
+    if (unique_id !== this.get_distinct_id()) {
         this.unregister(ALIAS_ID_KEY);
         this._register_single('distinct_id', unique_id);
     }
@@ -1992,7 +1992,7 @@ MixpanelLib.prototype.get_distinct_id = function () {
  * @param {String} alias A unique identifier that you want to use for this user in the future.
  * @param {String} [original] The current identifier being used for this user.
  */
-MixpanelLib.prototype.alias = function (alias, original) {
+MixpanelLib.prototype.alias = function (alias, original, callback) {
     // If the $people_distinct_id key exists in persistence, there has been a previous
     // mixpanel.people.identify() call made for this user. It is VERY BAD to make an alias with
     // this ID, as it will duplicate users.
@@ -2010,6 +2010,7 @@ MixpanelLib.prototype.alias = function (alias, original) {
         return this.track('$create_alias', { 'alias': alias, 'distinct_id': original }, function () {
             // Flush the people queue
             _this.identify(alias);
+            callback && callback();
         });
     } else {
         _utils.console.error('alias matches current distinct_id - skipping api call.');

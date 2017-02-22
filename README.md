@@ -1,5 +1,10 @@
 Fork from [mixpanel](https://github.com/mixpanel/mixpanel-js)
 # 修改
+## 修改 identify 方法
+  删除对 alias id 的判断
+## 修改 alias 函数参数
+  添加 callback 参数
+
 ## 添加 mixpanel.set_client_ip 方法
 如果设置 config.ip = false 则该方法则失效，详细见[Special properties in events](https://mixpanel.com/help/reference/http#tracking-events)中的 ip 参数
 注：使用 mixpanel.register({ ip: ip }) 存储设置的ip地址

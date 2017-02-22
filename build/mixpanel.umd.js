@@ -6,7 +6,7 @@
 
     var Config = {
         DEBUG: false,
-        LIB_VERSION: '2.9.16'
+        LIB_VERSION: '2.11.0'
     };
 
     // since es6 imports are static and we run unit tests from the console, window won't be defined when importing this file
@@ -1398,6 +1398,8 @@
                 return 'Chrome';
             } else if (_.includes(user_agent, 'CriOS')) {
                 return 'Chrome iOS';
+            } else if (_.includes(user_agent, 'UCWEB') || _.includes(user_agent, 'UCBrowser')) {
+                return 'UC Browser';
             } else if (_.includes(user_agent, 'FxiOS')) {
                 return 'Firefox iOS';
             } else if (_.includes(vendor, 'Apple')) {
@@ -1432,6 +1434,7 @@
                 'Microsoft Edge': /Edge\/(\d+(\.\d+)?)/,
                 'Chrome': /Chrome\/(\d+(\.\d+)?)/,
                 'Chrome iOS': /CriOS\/(\d+(\.\d+)?)/,
+                'UC Browser' : /(UCBrowser|UCWEB)\/(\d+(\.\d+)?)/,
                 'Safari': /Version\/(\d+(\.\d+)?)/,
                 'Mobile Safari': /Version\/(\d+(\.\d+)?)/,
                 'Opera': /(Opera|OPR)\/(\d+(\.\d+)?)/,
@@ -1549,8 +1552,6 @@
     _['info']['device']     = _.info.device;
     _['info']['browser']    = _.info.browser;
     _['info']['properties'] = _.info.properties;
-
-    var DISABLE_COOKIE = '__mpced';
 
     // specifying these locally here since some websites override the global Node var
     // ex: https://www.codingame.com/
@@ -1818,16 +1819,6 @@
             return props;
         },
 
-        checkForBackoff: function(resp) {
-            // temporarily stop CE for X seconds if the 'X-MP-CE-Backoff' header says to
-            var secondsToDisable = parseInt(resp.getResponseHeader('X-MP-CE-Backoff'));
-            if (!isNaN(secondsToDisable) && secondsToDisable > 0) {
-                var disableUntil = _.timestamp() + (secondsToDisable * 1000);
-                console.log('disabling CE for ' + secondsToDisable + ' seconds (from ' + _.timestamp() + ' until ' + disableUntil + ')');
-                _.cookie.set_seconds(DISABLE_COOKIE, true, secondsToDisable, true);
-            }
-        },
-
         _getEventTarget: function(e) {
             // https://developer.mozilla.org/en-US/docs/Web/API/Event/target#Compatibility_notes
             if (typeof e.target === 'undefined') {
@@ -1909,10 +1900,8 @@
 
         _addDomEventHandlers: function(instance) {
             var handler = _.bind(function(e) {
-                if (_.cookie.parse(DISABLE_COOKIE) !== true) {
-                    e = e || window.event;
-                    this._trackEvent(e, instance);
-                }
+                e = e || window.event;
+                this._trackEvent(e, instance);
             }, this);
             _.register_event(document, 'submit', handler, false, true);
             _.register_event(document, 'change', handler, false, true);
@@ -2998,9 +2987,6 @@
                 req.withCredentials = true;
                 req.onreadystatechange = function () {
                     if (req.readyState === 4) { // XMLHttpRequest.DONE == 4, except in safari 4
-                        if (url.indexOf('api.mixpanel.com/track') !== -1) {
-                            autotrack.checkForBackoff(req);
-                        }
                         if (req.status === 200) {
                             if (callback) {
                                 if (verbose_mode) {
@@ -3643,7 +3629,7 @@
 
         var data = {
             'verbose':     true,
-            'version':     '1',
+            'version':     '2',
             'lib':         'web',
             'token':       this.get_config('token'),
             'distinct_id': distinct_id
@@ -4123,15 +4109,17 @@
 
         this.body            = (_.escapeHTML(notif_data['body']) || '').replace(/\n/g, '<br/>');
         this.cta             = _.escapeHTML(notif_data['cta']) || 'Close';
-        this.dest_url        = _.escapeHTML(notif_data['cta_url']) || null;
-        this.image_url       = _.escapeHTML(notif_data['image_url']) || null;
         this.notif_type      = _.escapeHTML(notif_data['type']) || 'takeover';
         this.style           = _.escapeHTML(notif_data['style']) || 'light';
-        this.thumb_image_url = _.escapeHTML(notif_data['thumb_image_url']) || null;
         this.title           = _.escapeHTML(notif_data['title']) || '';
-        this.video_url       = _.escapeHTML(notif_data['video_url']) || null;
         this.video_width     = MPNotif.VIDEO_WIDTH;
         this.video_height    = MPNotif.VIDEO_HEIGHT;
+
+        // These fields are url-sanitized in the backend already.
+        this.dest_url        = notif_data['cta_url'] || null;
+        this.image_url       = notif_data['image_url'] || null;
+        this.thumb_image_url = notif_data['thumb_image_url'] || null;
+        this.video_url       = notif_data['video_url'] || null;
 
         this.clickthrough = true;
         if (!this.dest_url) {

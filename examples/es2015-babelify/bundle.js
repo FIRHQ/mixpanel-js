@@ -32,8 +32,6 @@ var _config2 = _interopRequireDefault(_config);
 
 var _utils = require('./utils');
 
-var DISABLE_COOKIE = '__mpced';
-
 // specifying these locally here since some websites override the global Node var
 // ex: https://www.codingame.com/
 var ELEMENT_NODE = 1;
@@ -304,16 +302,6 @@ var autotrack = {
         return props;
     },
 
-    checkForBackoff: function checkForBackoff(resp) {
-        // temporarily stop CE for X seconds if the 'X-MP-CE-Backoff' header says to
-        var secondsToDisable = parseInt(resp.getResponseHeader('X-MP-CE-Backoff'));
-        if (!isNaN(secondsToDisable) && secondsToDisable > 0) {
-            var disableUntil = _utils._.timestamp() + secondsToDisable * 1000;
-            console.log('disabling CE for ' + secondsToDisable + ' seconds (from ' + _utils._.timestamp() + ' until ' + disableUntil + ')');
-            _utils._.cookie.set_seconds(DISABLE_COOKIE, true, secondsToDisable, true);
-        }
-    },
-
     _getEventTarget: function _getEventTarget(e) {
         // https://developer.mozilla.org/en-US/docs/Web/API/Event/target#Compatibility_notes
         if (typeof e.target === 'undefined') {
@@ -395,10 +383,8 @@ var autotrack = {
 
     _addDomEventHandlers: function _addDomEventHandlers(instance) {
         var handler = _utils._.bind(function (e) {
-            if (_utils._.cookie.parse(DISABLE_COOKIE) !== true) {
-                e = e || window.event;
-                this._trackEvent(e, instance);
-            }
+            e = e || window.event;
+            this._trackEvent(e, instance);
         }, this);
         _utils._.register_event(document, 'submit', handler, false, true);
         _utils._.register_event(document, 'change', handler, false, true);
@@ -563,7 +549,6 @@ var autotrack = {
 _utils._.bind_instance_methods(autotrack);
 _utils._.safewrap_instance_methods(autotrack);
 
-exports.DISABLE_COOKIE = DISABLE_COOKIE;
 exports.autotrack = autotrack;
 
 },{"./config":3,"./utils":6}],3:[function(require,module,exports){
@@ -574,7 +559,7 @@ Object.defineProperty(exports, '__esModule', {
 });
 var Config = {
     DEBUG: false,
-    LIB_VERSION: '2.9.16'
+    LIB_VERSION: '2.11.0'
 };
 
 exports['default'] = Config;
@@ -1534,9 +1519,6 @@ MixpanelLib.prototype._send_request = function (url, data, callback) {
             req.onreadystatechange = function () {
                 if (req.readyState === 4) {
                     // XMLHttpRequest.DONE == 4, except in safari 4
-                    if (url.indexOf('api.mixpanel.com/track') !== -1) {
-                        _autotrack.autotrack.checkForBackoff(req);
-                    }
                     if (req.status === 200) {
                         if (callback) {
                             if (verbose_mode) {
@@ -2175,7 +2157,7 @@ MixpanelLib.prototype._check_and_handle_notifications = function (distinct_id) {
 
     var data = {
         'verbose': true,
-        'version': '1',
+        'version': '2',
         'lib': 'web',
         'token': this.get_config('token'),
         'distinct_id': distinct_id
@@ -2641,15 +2623,17 @@ MixpanelLib._Notification = function (notif_data, mixpanel_instance) {
 
     this.body = (_utils._.escapeHTML(notif_data['body']) || '').replace(/\n/g, '<br/>');
     this.cta = _utils._.escapeHTML(notif_data['cta']) || 'Close';
-    this.dest_url = _utils._.escapeHTML(notif_data['cta_url']) || null;
-    this.image_url = _utils._.escapeHTML(notif_data['image_url']) || null;
     this.notif_type = _utils._.escapeHTML(notif_data['type']) || 'takeover';
     this.style = _utils._.escapeHTML(notif_data['style']) || 'light';
-    this.thumb_image_url = _utils._.escapeHTML(notif_data['thumb_image_url']) || null;
     this.title = _utils._.escapeHTML(notif_data['title']) || '';
-    this.video_url = _utils._.escapeHTML(notif_data['video_url']) || null;
     this.video_width = MPNotif.VIDEO_WIDTH;
     this.video_height = MPNotif.VIDEO_HEIGHT;
+
+    // These fields are url-sanitized in the backend already.
+    this.dest_url = notif_data['cta_url'] || null;
+    this.image_url = notif_data['image_url'] || null;
+    this.thumb_image_url = notif_data['thumb_image_url'] || null;
+    this.video_url = notif_data['video_url'] || null;
 
     this.clickthrough = true;
     if (!this.dest_url) {
@@ -5425,6 +5409,8 @@ _.info = {
             return 'Chrome';
         } else if (_.includes(user_agent, 'CriOS')) {
             return 'Chrome iOS';
+        } else if (_.includes(user_agent, 'UCWEB') || _.includes(user_agent, 'UCBrowser')) {
+            return 'UC Browser';
         } else if (_.includes(user_agent, 'FxiOS')) {
             return 'Firefox iOS';
         } else if (_.includes(vendor, 'Apple')) {
@@ -5459,6 +5445,7 @@ _.info = {
             'Microsoft Edge': /Edge\/(\d+(\.\d+)?)/,
             'Chrome': /Chrome\/(\d+(\.\d+)?)/,
             'Chrome iOS': /CriOS\/(\d+(\.\d+)?)/,
+            'UC Browser': /(UCBrowser|UCWEB)\/(\d+(\.\d+)?)/,
             'Safari': /Version\/(\d+(\.\d+)?)/,
             'Mobile Safari': /Version\/(\d+(\.\d+)?)/,
             'Opera': /(Opera|OPR)\/(\d+(\.\d+)?)/,

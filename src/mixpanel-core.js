@@ -923,7 +923,7 @@ MixpanelLib.prototype._send_request = function(url, data, callback) {
             req.open('GET', url, true);
             // send the mp_optout cookie
             // withCredentials cannot be modified until after calling .open on Android and Mobile Safari
-            req.withCredentials = true;
+            // req.withCredentials = true;
             req.onreadystatechange = function () {
                 if (req.readyState === 4) { // XMLHttpRequest.DONE == 4, except in safari 4
                     if (req.status === 200) {

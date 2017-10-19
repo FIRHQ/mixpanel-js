@@ -1,5 +1,7 @@
 Fork from [mixpanel](https://github.com/mixpanel/mixpanel-js)
 # 修改
+## 添加 track_timeout 配置项
+  用于配置发送 xhr 请求超时时间, 默认 300 (ms)
 ## 修改 identify 方法
   删除对 alias id 的判断
 ## 修改 alias 函数参数

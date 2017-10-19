@@ -107,6 +107,7 @@ var DEFAULT_CONFIG = {
     'disable_cookie':         false,
     'secure_cookie':          false,
     'ip':                     true,
+    'track_timeout':          300, // 发送 xhr 超时时间
     'client_ip':              '', // 用于存储用户的ip地址
     'property_blacklist':     []
 };
@@ -888,6 +889,7 @@ MixpanelLib.prototype._send_request = function(url, data, callback) {
 
     // needed to correctly format responses
     var verbose_mode = this.get_config('verbose');
+
     if (data['verbose']) { verbose_mode = true; }
 
     if (this.get_config('test')) { data['test'] = 1; }
@@ -948,6 +950,10 @@ MixpanelLib.prototype._send_request = function(url, data, callback) {
                 }
             };
             req.send(null);
+            var timeout = this.get_config('track_timeout');
+            setTimeout(function () {
+                req.abort();
+            }, timeout)
         } catch (e) {
             console.error(e);
         }

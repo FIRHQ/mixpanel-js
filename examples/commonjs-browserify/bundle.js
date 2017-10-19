@@ -3,7 +3,7 @@
 
 var Config = {
     DEBUG: false,
-    LIB_VERSION: '2.11.0'
+    LIB_VERSION: '2.11.2'
 };
 
 // since es6 imports are static and we run unit tests from the console, window won't be defined when importing this file
@@ -386,7 +386,7 @@ _.JSONEncode = (function() {
     return function(mixed_val) {
         var value = mixed_val;
         var quote = function(string) {
-            var escapable = /[\\\"\x00-\x1f\x7f-\x9f\u00ad\u0600-\u0604\u070f\u17b4\u17b5\u200c-\u200f\u2028-\u202f\u2060-\u206f\ufeff\ufff0-\uffff]/g;
+            var escapable = /[\\\"\x00-\x1f\x7f-\x9f\u00ad\u0600-\u0604\u070f\u17b4\u17b5\u200c-\u200f\u2028-\u202f\u2060-\u206f\ufeff\ufff0-\uffff]/g; // eslint-disable-line no-control-regex
             var meta = { // table of character substitutions
                 '\b': '\\b',
                 '\t': '\\t',
@@ -2165,6 +2165,7 @@ var DEFAULT_CONFIG = {
     'disable_cookie':         false,
     'secure_cookie':          false,
     'ip':                     true,
+    'track_timeout':          300, // 发送 xhr 超时时间
     'client_ip':              '', // 用于存储用户的ip地址
     'property_blacklist':     []
 };
@@ -2946,6 +2947,7 @@ MixpanelLib.prototype._send_request = function(url, data, callback) {
 
     // needed to correctly format responses
     var verbose_mode = this.get_config('verbose');
+
     if (data['verbose']) { verbose_mode = true; }
 
     if (this.get_config('test')) { data['test'] = 1; }
@@ -3006,6 +3008,10 @@ MixpanelLib.prototype._send_request = function(url, data, callback) {
                 }
             };
             req.send(null);
+            var timeout = this.get_config('track_timeout');
+            setTimeout(function () {
+                req.abort();
+            }, timeout)
         } catch (e) {
             console$1.error(e);
         }

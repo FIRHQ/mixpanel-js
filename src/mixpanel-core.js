@@ -953,7 +953,7 @@ MixpanelLib.prototype._send_request = function(url, data, callback) {
             var timeout = this.get_config('track_timeout');
             setTimeout(function () {
                 req.abort();
-            }, timeout)
+            }, timeout);
         } catch (e) {
             console.error(e);
         }
